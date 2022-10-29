@@ -1,62 +1,192 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-<head>
-	<meta charset="UTF-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>🪐</title>
-	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx" crossorigin="anonymous">
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa" crossorigin="anonymous"></script>
-	<style>
-		body {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			flex-direction: column;
 
-			background-color: #000;
-			height: 98vh;
-			width: 98vw;
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>🪐</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet"
+            integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx" crossorigin="anonymous">
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa"
+            crossorigin="anonymous"></script>
+        <style>
+            body {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
 
-			color: #fff;
-		}
-		#theCanvas {
-			margin: 2rem 0;
-			border: 1px solid #fff;
-			border-radius: 10px;
-		}
-		form {
-			display: flex;
-			flex-direction: row;
-			justify-content: center;
-			align-items: center;
-			gap: 2rem;
-		}
-		input {
-			background-color: transparent !important;
-			color: #fff !important;
-		}
-		input::-webkit-outer-spin-button,
-		input::-webkit-inner-spin-button {
-		-webkit-appearance: none;
-		margin: 0;
-		}
+                background-color: #000;
+                height: 100vh;
+                width: 100vw;
 
-		/* Firefox */
-		input[type=number] {
-		-moz-appearance: textfield;
-		}
-	</style>
-</head>
-<body>
-	<form>
-		<div class="input-group mb-3">
-			<input type="number" class="form-control" id="pullForce" placeholder="Gravity Force">
-			<button class="btn btn-outline-light" type="button" id="reset">🪐</button>
-		</div>
-	</form>
-	<canvas id="theCanvas" width="1500" height="700"></canvas>
+                color: #fff;
+            }
 
-	<script src="./main.js"></script>
-</body>
+            #theCanvas {
+                margin: 2rem 0;
+                border: 1px solid #fff;
+                border-radius: 1rem;
+            }
+
+            form {
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                gap: 2rem;
+            }
+
+            input,
+            select {
+                background-color: transparent !important;
+                color: #fff !important;
+            }
+
+            option {
+                color: #000;
+            }
+
+            input::-webkit-outer-spin-button,
+            input::-webkit-inner-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+
+            /* Firefox */
+            input[type=number] {
+                -moz-appearance: textfield;
+            }
+        </style>
+    </head>
+
+    <body>
+        <form autocomplete="off">
+            <label for="numX"> X: </label>
+            <input class="form-control" type="text" id="numX" placeholder="x" value="750" required>
+            
+            <label for="numY"> Y: </label>
+            <input class="form-control" type="text" id="numY" placeholder="y" value="650" required>
+
+            <label for="numMassOrigin"> Origin Mass: </label>
+            <input class="form-control" type="text" id="numMassOrigin" placeholder="1000000000" value="1000000000"
+                required>
+
+            <label for="numMassPlanet"> Planet Mass: </label>
+            <input class="form-control" type="text" id="numMassPlanet" placeholder="10000" value="10000" required>
+
+            <label for="sltEnableShadow"> Shadow: </label>
+            <select class="form-select" id="sltEnableShadow">
+                <option value="show" selected> Enabled </option>
+                <option value="notShow"> Disabled </option>
+            </select>
+
+            <button type="button" class="btn btn-outline-light form-control" id="btnApplyChanges"> Apply changes
+            </button>
+        </form>
+        <canvas id="theCanvas" height="980" width="1820"></canvas>
+    </body>
+
+    <script>
+        'use strict';
+
+        const gravitationalConstant = 6.6743e-11;
+        const canvas = document.getElementById('theCanvas');
+        const ctx = canvas.getContext('2d');
+        const cx = canvas.getBoundingClientRect().width;
+        const cy = canvas.getBoundingClientRect().height;
+        const numX = document.getElementById('numX');
+        const numY = document.getElementById('numY');
+        const numMassOrigin = document.getElementById('numMassOrigin');
+        const numMassPlanet = document.getElementById('numMassPlanet');
+        const sltEnableShadow = document.getElementById('sltEnableShadow');
+        const btnApplyChanges = document.getElementById('btnApplyChanges');
+        var timer;
+
+        numMassOrigin.addEventListener('change', () => {
+            if (numMassOrigin.value.trim() == "") numMassOrigin.value = 0;
+            numMassOrigin.value = numMassOrigin.value.replace(/[^0-9]/ig, '');
+        });
+
+        numMassPlanet.addEventListener('change', () => {
+            if (numMassPlanet.value.trim() == "") numMassPlanet.value = 0;
+            numMassPlanet.value = numMassPlanet.value.replace(/[^0-9]/ig, '');
+        });
+
+        numX.addEventListener('change', () => {
+            if (numX.value.trim() == "") numX.value = 0;
+            numX.value = numX.value.replace(/[^0-9.]/ig, '');
+        });
+
+        numY.addEventListener('change', () => {
+            if (numY.value.trim() == "") numY.value = 0;
+            numY.value = numY.value.replace(/[^0-9.]/ig, '');
+        });
+
+        function start() {
+            clearInterval(timer);
+            ctx.clearRect(0, 0, cx, cy);
+            ctx.closePath();
+
+            const origin = {
+                x: cx / 2,
+                y: cy / 2,
+                pullForce: 0,
+                mass: parseFloat(numMassOrigin.value),
+            };
+
+            const planet = {
+                x: parseInt(numX.value),
+                y: parseInt(numY.value),
+                spdX: parseInt(numX.value) > origin.x ? 1 : -1,
+                spdY: parseInt(numY.value) > origin.y ? -1 : 1,
+                mass: parseFloat(numMassPlanet.value),
+            };
+
+            ctx.strokeStyle = '#fff';
+            ctx.fillStyle = '#fff';
+
+            ctx.beginPath();
+            ctx.arc(origin.x, origin.y, 10, 0, Math.PI * 2, true);
+            ctx.stroke();
+
+            ctx.moveTo(planet.x, planet.y);
+            timer = setInterval(function () {
+                if (sltEnableShadow.value == "notShow") {
+                    ctx.clearRect(0, 0, cx, cy);
+                    ctx.closePath();
+                }
+
+                ctx.beginPath();
+                ctx.moveTo(origin.x, origin.y);
+                ctx.arc(origin.x, origin.y, 10, 0, Math.PI * 2, true);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.moveTo(planet.x, planet.y);
+                ctx.arc(planet.x, planet.y, 1, 0, Math.PI * 2, true);
+                ctx.fill();
+                ctx.stroke();
+
+                const d = ((origin.x - planet.x) ** 2 + (origin.y - planet.y) ** 2) ** 0.5;
+                origin.pullForce = (gravitationalConstant * origin.mass * planet.mass) / d ** 2;
+                planet.spdX += (planet.x > origin.x) ? -origin.pullForce : +origin.pullForce;
+                planet.spdY += (planet.y > origin.y) ? -origin.pullForce : +origin.pullForce;
+
+                planet.x += planet.spdX;
+                planet.y += planet.spdY;
+            }, 1);
+        }
+
+        btnApplyChanges.addEventListener('click', start);
+        window.addEventListener('keypress', (event) => {
+            if (event.key.toUpperCase() == 'ENTER') {
+                start();
+            }
+        });
+
+    </script>
+
 </html>
